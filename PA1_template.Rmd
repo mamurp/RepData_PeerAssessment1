@@ -8,18 +8,86 @@ output:
 
 ## Loading and preprocessing the data
 
+```{r load and preprocess data}
+        
+        act <- read.csv (unz("~/GitHub/RepData_PeerAssessment1/activity.zip", "activity.csv"), stringsAsFactors = FALSE)
+        act$date <- as.Date(act$date)
+        act1 <- act
+        library(dplyr)
+```
 
-
+### Histogram of the total number of steps per day
+The histogram below shows the total number of steps per day.  Many days show no activity.
+```{r plot total number of steps}
+        totstep <- sapply(split(act1$steps, act1$date), sum, na.rm=TRUE)
+        hist(totstep, breaks = c(0,2500,5000,7500,10000,12500,15000,17500,20000,22500,25000), 
+     main ="Total number of steps per day", xlab = "Steps")
+```
+        
 ## What is mean total number of steps taken per day?
+```{r calculate mean and median number of steps}
+      meanstep <- sapply(split(act1$steps, act1$date), mean, na.rm=TRUE)
+        medstep <- sapply(split(act1$steps, act1$date), median, na.rm=TRUE)
+```
 
-
-
+###The Mean number of steps per day is 
+```{r}
+        meanstep
+```
+###The median number of steps per day is
+```{r}
+        medstep
+```
 ## What is the average daily activity pattern?
 
-
+Below is a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+        
+```{r code for time series plot}
+        intsteps <- tapply(act1$steps, act1$interval, mean, na.rm=TRUE)
+        timser <- data.frame(interval = as.numeric(names(intsteps)), average = intsteps)
+        plot(timser$interval, timser$average, type="l", main="Average Daily Activity Patter", xlab="Interval", ylab="Steps per interval")
+```        
+The  5-minute interval, on average across all the days in the dataset, that contains the maximum number of steps and the number of steps is:
+```{r  }
+        ## interval with max number of steps
+t <- which.max(intsteps)
+intsteps[t]
+```
 
 ## Imputing missing values
+The original value is moved from long to wide with dcast.  This facilitates calculating the mean for each interval and replace the mean per interval in areas where data is not available(NA).
+```{r}
+        library(reshape2)
+        ## dcast data.frame from long to wide using interval as column names
+        act2 <- dcast(act1, date~interval, value.var="steps")
+        ## find the mean for each columna and replace NAs with column(interval) mean
+        for (i in 2:289) {
+        act2[,i][which(is.na(act2[,i]))] <- mean(act2[,i], na.rm=TRUE)
+}
 
+        
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+```{r differences in activity patterns}
+        act4 <- mutate(act2, weekday = weekdays(date))
+        #create a vector of weekdays
+                weekdays1 <- c('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')
+#Use `%in%` and `weekdays` to create a logical vector
+#convert to `factor` and specify the `levels/labels`
+        act4$wDay <- factor((act4$weekday %in% weekdays1), levels=c(FALSE, TRUE), labels=c('weekend', 'weekday'))
+# calculate mean number of steps foreach interval and place in data fram
+        totstep1 <- sapply(split(act4[,2:289], act4$wDay), colMeans)
+        totstep1 <- as.data.frame(totstep1)
+        totstep1 <- mutate(totstep1, interval=row.names(totstep1))
+        totstep2 <- melt(totstep1, id.vars = "interval", measure.vars = c("weekend", "weekday"))
+# create plots with named variables, values
+        library(lattice)
+        names(totstep2) <- c("interval","weekday", "steps") 
+        totstep2$interval <- as.numeric(totstep2$interval)
+        xyplot(steps~interval|weekday, type="l", data=totstep2, layout=c(1,2))
+
+
+```                    
+                    
