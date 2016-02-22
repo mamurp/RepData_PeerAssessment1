@@ -143,8 +143,16 @@ The original value is moved from long to wide with dcast.  This facilitates calc
         act2[,i][which(is.na(act2[,i]))] <- mean(act2[,i], na.rm=TRUE)
 }
 ```
+The total number of steps per day replacing mean steps per interval for missing data
 
+```r
+        totstepNAout<-colSums(act2[2:289])
+        hist(totstepNAout, breaks = c(0,1000,2000,3000, 4000, 5000,7500,10000,13000), 
+     main ="Total number of steps per day, including imputed data", xlab = "Steps")
+```
 
+![](PA1_template_files/figure-html/unnamed-chunk-5-1.png)
+                      
 ## Are there differences in activity patterns between weekdays and weekends?
 
 ```r
